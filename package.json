@@ -1,26 +1,26 @@
 {
-  "name": "nengi-uws-instance-adapter",
-  "version": "0.6.0",
-  "description": "uWebSockets.js adapter for nengi instance",
-  "main": "./build/index.js",
-  "scripts": {
-    "test": "npx jest",
-    "build": "npx tsc"
-  },
-  "author": "Alex // timetocode",
-  "license": "Apache 2.0",
-  "devDependencies": {
-    "@types/jest": "^29.4.12",
-    "@types/node": "^22.4.0",
-    "@types/ws": "^8.5.12",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.4",
-    "typescript": "^5.5.4"
-  },
-  "dependencies": {
-    "@types/node": "^20.11.16",
-    "nengi": "^2.0.0-alpha.170",
-    "nengi-buffers": "^0.3.0",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.47.0"
-  }
+	"name": "nengi-uws-instance-adapter",
+	"version": "0.7.0",
+	"description": "uWebSockets.js adapter for nengi instance",
+	"main": "./build/index.js",
+	"scripts": {
+		"test": "npx jest",
+		"build": "npx tsc"
+	},
+	"author": "Alex // timetocode",
+	"license": "Apache 2.0",
+	"devDependencies": {
+		"@types/jest": "^29.4.12",
+		"@types/node": "^22.10.2",
+		"@types/ws": "^8.5.13",
+		"jest": "^29.7.0",
+		"ts-jest": "^29.2.4",
+		"typescript": "^5.5.4"
+	},
+	"dependencies": {
+		"@types/node": "^22.10.2",
+		"nengi": "^2.0.0-alpha.173",
+		"nengi-buffers": "^0.5.0",
+		"uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.51.0"
+	}
 }
