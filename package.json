@@ -1,26 +1,25 @@
 {
 	"name": "nengi-uws-instance-adapter",
-	"version": "0.7.0",
+	"version": "2.0.0-rc.120",
 	"description": "uWebSockets.js adapter for nengi instance",
 	"main": "./build/index.js",
+	"types": "./build/index.d.ts",
 	"scripts": {
-		"test": "npx jest",
-		"build": "npx tsc"
+		"test": "jest",
+		"build": "tsc"
 	},
 	"author": "Alex // timetocode",
 	"license": "Apache 2.0",
 	"devDependencies": {
-		"@types/jest": "^29.4.12",
-		"@types/node": "^22.10.2",
-		"@types/ws": "^8.5.13",
+		"@types/jest": "^29.5.14",
+		"@types/node": "^20.19.0",
 		"jest": "^29.7.0",
-		"ts-jest": "^29.2.4",
-		"typescript": "^5.5.4"
+		"ts-jest": "^29.4.0",
+		"typescript": "^5.9.3"
 	},
 	"dependencies": {
-		"@types/node": "^22.10.2",
-		"nengi": "^2.0.0-alpha.173",
-		"nengi-buffers": "^0.5.0",
-		"uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.51.0"
+		"nengi": "file:../nengi",
+		"nengi-buffers": "file:../nengi-buffers",
+		"uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.66.0"
 	}
 }
