@@ -1,11 +1,9 @@
 import type { AppOptions, TemplatedApp, WebSocket, us_listen_socket } from 'uWebSockets.js'
 import { Buffer } from 'buffer'
 import {
-    IServerNetworkAdapter,
-    InstanceNetwork,
     User
 } from 'nengi'
-import type { BinaryAdapter } from 'nengi'
+import type { BinaryAdapter, IServerNetworkAdapter, InstanceNetwork } from 'nengi'
 import { bufferBinary } from 'nengi-buffers'
 
 type UserData = {

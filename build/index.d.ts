@@ -1,7 +1,7 @@
 import type { AppOptions, TemplatedApp, us_listen_socket } from 'uWebSockets.js';
 import { Buffer } from 'buffer';
-import { IServerNetworkAdapter, InstanceNetwork, User } from 'nengi';
-import type { BinaryAdapter } from 'nengi';
+import { User } from 'nengi';
+import type { BinaryAdapter, IServerNetworkAdapter, InstanceNetwork } from 'nengi';
 type UwsWebSocketBehavior = Parameters<TemplatedApp['ws']>[1];
 type UwsListenOptions = number | {
     port: number;
