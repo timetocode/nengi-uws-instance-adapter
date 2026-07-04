@@ -1,6 +1,6 @@
 {
 	"name": "nengi-uws-instance-adapter",
-	"version": "2.0.0-rc.121",
+	"version": "2.0.0-rc.123",
 	"description": "uWebSockets.js adapter for nengi instance",
 	"main": "./build/index.js",
 	"types": "./build/index.d.ts",
@@ -31,10 +31,10 @@
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {
-		"nengi-buffers": "2.0.0-rc.121",
+		"nengi-buffers": "2.0.0-rc.123",
 		"uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.66.0"
 	},
 	"peerDependencies": {
-		"nengi": "2.0.0-rc.121"
+		"nengi": "2.0.0-rc.123"
 	}
 }
