@@ -98,6 +98,9 @@ class UwsInstanceAdapter {
     disconnect(user, reason) {
         user.socket.end(1000, closePayload(reason));
     }
+    terminate(user, reason) {
+        user.socket.close();
+    }
     send(user, buffer) {
         user.socket.send(buffer, true);
     }

@@ -27,6 +27,7 @@ declare class UwsInstanceAdapter implements IServerNetworkAdapter<Buffer, Buffer
     constructor(network: InstanceNetwork, config?: UwsInstanceAdapterConfig);
     listen(options: UwsListenOptions, ready?: () => void): void;
     disconnect(user: User, reason: any): void;
+    terminate(user: User, reason: any): void;
     send(user: User, buffer: Buffer): void;
 }
 declare const uWebSocketsInstanceAdapter: typeof UwsInstanceAdapter;

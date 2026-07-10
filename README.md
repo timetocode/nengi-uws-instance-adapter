@@ -1,6 +1,15 @@
 # nengi-uws-instance-adapter
 
-uWebSockets.js server adapter for nengi.
+Node.js server adapter for nengi using `uWebSockets.js` and the
+`nengi-buffers` binary backend.
+
+Keep the complete Nengi package family on one exact version:
+
+```sh
+npm install nengi@2.0.0-rc.125 \
+    nengi-uws-instance-adapter@2.0.0-rc.125 \
+    nengi-buffers@2.0.0-rc.125
+```
 
 ```ts
 import { Instance } from 'nengi'
@@ -9,14 +18,6 @@ import { UwsInstanceAdapter } from 'nengi-uws-instance-adapter'
 const instance = new Instance(context)
 const adapter = new UwsInstanceAdapter(instance.network)
 
-adapter.listen(8079, () => {
-    console.log('listening')
-})
-```
-
-`listen` accepts either a port number or an options object:
-
-```ts
 adapter.listen({
     host: '0.0.0.0',
     port: 8079,
@@ -24,27 +25,14 @@ adapter.listen({
 })
 ```
 
-For direct TLS, pass `ssl: true` with the `uWebSockets.js` SSL app options:
+For direct TLS, pass `ssl: true` and `appOptions` containing the
+`uWebSockets.js` certificate options. The adapter implements immediate socket
+termination for Nengi handshake and Pong deadlines.
 
-```ts
-adapter.listen({
-    port: 8079,
-    ssl: true,
-    appOptions: {
-        key_file_name: 'server.key',
-        cert_file_name: 'server.crt'
-    }
-})
-```
+`uWebSockets.js` ships native binaries for selected Node/V8 ABI versions.
+Current even-numbered LTS Node releases are the safest default. If loading
+fails, the adapter reports the active Node version and modules ABI.
 
-## Node support
-
-This package depends on `uWebSockets.js`, which ships native binaries for
-selected Node/V8 ABI versions. In practice, that usually means current even/LTS
-Node majors are the safest choices. Odd or newly released Node majors can fail
-to load until `uWebSockets.js` publishes a matching binary.
-
-If that happens, the adapter throws an error that includes the active Node
-version and modules ABI. Use an even/LTS Node version supported by the installed
-`uWebSockets.js` release, or update the `uWebSockets.js` GitHub dependency when
-a newer release adds support.
+Import only from package roots. See the
+[nengi manual](https://github.com/timetocode/nengi/tree/rc/2.0.0/docs/ai) for
+connection lifecycle, timing, and deployment guidance.

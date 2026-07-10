@@ -137,6 +137,10 @@ class UwsInstanceAdapter implements IServerNetworkAdapter<Buffer, Buffer, UwsLis
         user.socket.end(1000, closePayload(reason))
     }
 
+    terminate(user: User, reason: any): void {
+        user.socket.close()
+    }
+
     send(user: User, buffer: Buffer): void {
         user.socket.send(buffer, true)
     }
