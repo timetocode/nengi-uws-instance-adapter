@@ -6,9 +6,9 @@ Node.js server adapter for nengi using `uWebSockets.js` and the
 Keep the complete Nengi package family on one exact version:
 
 ```sh
-npm install nengi@2.0.0-rc.125 \
-    nengi-uws-instance-adapter@2.0.0-rc.125 \
-    nengi-buffers@2.0.0-rc.125
+npm install nengi@2.0.0-rc.126 \
+    nengi-uws-instance-adapter@2.0.0-rc.126 \
+    nengi-buffers@2.0.0-rc.126
 ```
 
 ```ts
