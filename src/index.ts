@@ -1,7 +1,7 @@
 import type { AppOptions, TemplatedApp, WebSocket, us_listen_socket } from 'uWebSockets.js'
 import { Buffer } from 'buffer'
 import {
-    User
+    User, UserConnectionState
 } from 'nengi'
 import type { BinaryAdapter, IServerNetworkAdapter, InstanceNetwork } from 'nengi'
 import { bufferBinary } from 'nengi-buffers'
@@ -82,7 +82,7 @@ class UwsInstanceAdapter implements IServerNetworkAdapter<Buffer, Buffer, UwsLis
         this.app = ssl ? uWS.SSLApp(appOptions) : uWS.App(appOptions)
         this.app.ws<UserData>(path, {
             compression: 0,
-            maxPayloadLength: 16 * 1024 * 1024,
+            maxPayloadLength: this.network.instance.limits.maxPacketBytes,
             idleTimeout: 120,
             ...behavior,
 
@@ -99,14 +99,25 @@ class UwsInstanceAdapter implements IServerNetworkAdapter<Buffer, Buffer, UwsLis
             },
 
             message: (socket, message, isBinary) => {
-                behavior.message?.(socket, message, isBinary)
                 const user = socket.getUserData().user
-                if (!isBinary || !user) {
+                if (!user || user.connectionState === UserConnectionState.Closed) return
+                if (!isBinary) {
+                    this.network.notifyInboundMessageError(user, Buffer.from(message), new Error('Nengi requires binary WebSocket messages.'))
+                    this.network.disconnectUser(user, { reason: 'text_frame' }, true)
                     return
                 }
+                behavior.message?.(socket, message, isBinary)
                 this.network.onMessage(user, Buffer.from(message))
             },
 
+            ping: (socket, message) => {
+                const user = socket.getUserData().user
+                if (user && this.network.onTransportControl(user, message.byteLength)) behavior.ping?.(socket, message)
+            },
+            pong: (socket, message) => {
+                const user = socket.getUserData().user
+                if (user && this.network.onTransportControl(user, message.byteLength)) behavior.pong?.(socket, message)
+            },
             close: (socket, code, message) => {
                 behavior.close?.(socket, code, message)
                 const user = socket.getUserData().user
@@ -142,7 +153,14 @@ class UwsInstanceAdapter implements IServerNetworkAdapter<Buffer, Buffer, UwsLis
     }
 
     send(user: User, buffer: Buffer): void {
-        user.socket.send(buffer, true)
+        if (user.connectionState === UserConnectionState.Closed) {
+            throw new Error('Cannot send a nengi snapshot on a closed uWS WebSocket.')
+        }
+        // 0 is accepted with backpressure; 2 is dropped. Snapshot construction
+        // already committed the delta, so a dropped send must end this session.
+        if (user.socket.send(buffer, true) === 2) {
+            throw new Error('uWS WebSocket dropped a nengi snapshot due to backpressure.')
+        }
     }
 }
 

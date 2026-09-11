@@ -45,7 +45,7 @@ class UwsInstanceAdapter {
         this.app = ssl ? uWS.SSLApp(appOptions) : uWS.App(appOptions);
         this.app.ws(path, {
             compression: 0,
-            maxPayloadLength: 16 * 1024 * 1024,
+            maxPayloadLength: this.network.instance.limits.maxPacketBytes,
             idleTimeout: 120,
             ...behavior,
             open: socket => {
@@ -63,12 +63,28 @@ class UwsInstanceAdapter {
             },
             message: (socket, message, isBinary) => {
                 var _a;
-                (_a = behavior.message) === null || _a === void 0 ? void 0 : _a.call(behavior, socket, message, isBinary);
                 const user = socket.getUserData().user;
-                if (!isBinary || !user) {
+                if (!user || user.connectionState === nengi_1.UserConnectionState.Closed)
+                    return;
+                if (!isBinary) {
+                    this.network.notifyInboundMessageError(user, buffer_1.Buffer.from(message), new Error('Nengi requires binary WebSocket messages.'));
+                    this.network.disconnectUser(user, { reason: 'text_frame' }, true);
                     return;
                 }
+                (_a = behavior.message) === null || _a === void 0 ? void 0 : _a.call(behavior, socket, message, isBinary);
                 this.network.onMessage(user, buffer_1.Buffer.from(message));
+            },
+            ping: (socket, message) => {
+                var _a;
+                const user = socket.getUserData().user;
+                if (user && this.network.onTransportControl(user, message.byteLength))
+                    (_a = behavior.ping) === null || _a === void 0 ? void 0 : _a.call(behavior, socket, message);
+            },
+            pong: (socket, message) => {
+                var _a;
+                const user = socket.getUserData().user;
+                if (user && this.network.onTransportControl(user, message.byteLength))
+                    (_a = behavior.pong) === null || _a === void 0 ? void 0 : _a.call(behavior, socket, message);
             },
             close: (socket, code, message) => {
                 var _a;
@@ -102,7 +118,14 @@ class UwsInstanceAdapter {
         user.socket.close();
     }
     send(user, buffer) {
-        user.socket.send(buffer, true);
+        if (user.connectionState === nengi_1.UserConnectionState.Closed) {
+            throw new Error('Cannot send a nengi snapshot on a closed uWS WebSocket.');
+        }
+        // 0 is accepted with backpressure; 2 is dropped. Snapshot construction
+        // already committed the delta, so a dropped send must end this session.
+        if (user.socket.send(buffer, true) === 2) {
+            throw new Error('uWS WebSocket dropped a nengi snapshot due to backpressure.');
+        }
     }
 }
 exports.UwsInstanceAdapter = UwsInstanceAdapter;
