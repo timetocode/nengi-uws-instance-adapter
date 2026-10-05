@@ -1,11 +1,11 @@
-const { Instance, Context, User, UserConnectionState, Channel } = require('nengi')
+const { Instance, Context, UserConnectionState, Channel } = require('nengi')
 const { UwsInstanceAdapter } = require('../build')
 
 it.each([0, 1])('retains an accepted snapshot for uWS send status %s', status => {
     const instance = new Instance(new Context())
-    const adapter = new UwsInstanceAdapter(instance.network)
+    const adapter = new UwsInstanceAdapter(instance.adapterHost)
     const socket = { send: jest.fn(() => status), end: jest.fn() }
-    const user = new User(socket, adapter)
+    const user = instance.adapterHost.createConnection(socket, adapter)
     user.instance = instance
     instance.network.onConnectionAccepted(user, {})
     instance.step()
@@ -16,10 +16,10 @@ it.each([0, 1])('retains an accepted snapshot for uWS send status %s', status =>
 
 it('disconnects on a dropped committed snapshot while another user keeps receiving', () => {
     const instance = new Instance(new Context())
-    const adapter = new UwsInstanceAdapter(instance.network)
+    const adapter = new UwsInstanceAdapter(instance.adapterHost)
     const users = [2, 1].map(status => {
         const socket = { send: jest.fn(() => status), end: jest.fn() }
-        const user = new User(socket, adapter)
+        const user = instance.adapterHost.createConnection(socket, adapter)
         user.instance = instance
         instance.network.onConnectionAccepted(user, {})
         return user
@@ -40,8 +40,8 @@ it('disconnects on a dropped committed snapshot while another user keeps receivi
 
 it('does not access an invalidated native socket after close', () => {
     const instance = new Instance(new Context())
-    const adapter = new UwsInstanceAdapter(instance.network)
-    const user = new User({ send: jest.fn() }, adapter)
+    const adapter = new UwsInstanceAdapter(instance.adapterHost)
+    const user = instance.adapterHost.createConnection({ send: jest.fn() }, adapter)
     user.connectionState = UserConnectionState.Closed
     expect(() => adapter.send(user, Buffer.alloc(1))).toThrow(/closed/)
     expect(user.socket.send).not.toHaveBeenCalled()

@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.uWebSocketsInstanceAdapter = exports.UwsInstanceAdapter = void 0;
 const buffer_1 = require("buffer");
-const nengi_1 = require("nengi");
 const nengi_buffers_1 = require("nengi-buffers");
 function loadUws() {
     try {
@@ -30,12 +29,20 @@ class UwsInstanceAdapter {
         var _a;
         this.app = null;
         this.token = null;
+        this.serverAdapterVersion = 1;
+        if ((network === null || network === void 0 ? void 0 : network.serverAdapterVersion) !== this.serverAdapterVersion) {
+            throw new Error('This adapter requires nengi server adapter contract version 1. Pass instance.adapterHost from a compatible core.');
+        }
         this.network = network;
         this.binary = (_a = config.binary) !== null && _a !== void 0 ? _a : nengi_buffers_1.bufferBinary;
         this.config = config;
     }
     listen(options, ready) {
         var _a, _b, _c, _d, _e, _f, _g, _h;
+        if (this.shutdownPromise)
+            throw new Error('UwsInstanceAdapter has shut down. Create a new adapter to listen again.');
+        if (this.app)
+            throw new Error('UwsInstanceAdapter is already listening.');
         const listenOptions = typeof options === 'number' ? { port: options } : options;
         const appOptions = (_b = (_a = listenOptions.appOptions) !== null && _a !== void 0 ? _a : this.config.appOptions) !== null && _b !== void 0 ? _b : {};
         const path = (_d = (_c = listenOptions.path) !== null && _c !== void 0 ? _c : this.config.path) !== null && _d !== void 0 ? _d : '/*';
@@ -45,13 +52,13 @@ class UwsInstanceAdapter {
         this.app = ssl ? uWS.SSLApp(appOptions) : uWS.App(appOptions);
         this.app.ws(path, {
             compression: 0,
-            maxPayloadLength: this.network.instance.limits.maxPacketBytes,
+            maxPayloadLength: this.network.limits.maxPacketBytes,
             idleTimeout: 120,
             ...behavior,
             open: socket => {
                 var _a;
                 (_a = behavior.open) === null || _a === void 0 ? void 0 : _a.call(behavior, socket);
-                const user = new nengi_1.User(socket, this);
+                const user = this.network.createConnection(socket, this);
                 socket.getUserData().user = user;
                 try {
                     user.remoteAddress = buffer_1.Buffer.from(socket.getRemoteAddressAsText()).toString('utf8');
@@ -64,7 +71,7 @@ class UwsInstanceAdapter {
             message: (socket, message, isBinary) => {
                 var _a;
                 const user = socket.getUserData().user;
-                if (!user || user.connectionState === nengi_1.UserConnectionState.Closed)
+                if (!user || user.isClosed)
                     return;
                 if (!isBinary) {
                     this.network.notifyInboundMessageError(user, buffer_1.Buffer.from(message), new Error('Nengi requires binary WebSocket messages.'));
@@ -101,6 +108,10 @@ class UwsInstanceAdapter {
             if (!token) {
                 throw listenFailure(listenOptions.port);
             }
+            if (this.shutdownPromise) {
+                uWS.us_listen_socket_close(token);
+                return;
+            }
             this.token = token;
             ready === null || ready === void 0 ? void 0 : ready();
         };
@@ -111,6 +122,28 @@ class UwsInstanceAdapter {
             this.app.listen(listenOptions.port, onListen);
         }
     }
+    shutdown(reason) {
+        if (this.shutdownPromise)
+            return this.shutdownPromise;
+        let finish;
+        let fail;
+        this.shutdownPromise = new Promise((resolve, reject) => {
+            finish = resolve;
+            fail = reject;
+        });
+        const app = this.app;
+        this.app = null;
+        this.token = null;
+        try {
+            this.network.shutdownAdapter(this, reason);
+            app === null || app === void 0 ? void 0 : app.close();
+            finish();
+        }
+        catch (error) {
+            fail(error);
+        }
+        return this.shutdownPromise;
+    }
     disconnect(user, reason) {
         user.socket.end(1000, closePayload(reason));
     }
@@ -118,7 +151,7 @@ class UwsInstanceAdapter {
         user.socket.close();
     }
     send(user, buffer) {
-        if (user.connectionState === nengi_1.UserConnectionState.Closed) {
+        if (user.isClosed) {
             throw new Error('Cannot send a nengi snapshot on a closed uWS WebSocket.');
         }
         // 0 is accepted with backpressure; 2 is dropped. Snapshot construction
